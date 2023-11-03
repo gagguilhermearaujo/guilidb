@@ -14,6 +14,14 @@ type BodyStruct struct {
 	Document map[string]any `json:"document" xml:"document" form:"document"`
 }
 
+type GetResponse struct {
+	Document map[string]any `json:"document" xml:"document" form:"document"`
+}
+
+type AuditResponse struct {
+	DocumentHistory []map[string]any `json:"documentHistory" xml:"documentHistory" form:"documentHistory"`
+}
+
 func getHandler(c *fiber.Ctx) error {
 	collection, key, err := validateCollectionAndKey(c)
 	if err != nil {
@@ -28,7 +36,7 @@ func getHandler(c *fiber.Ctx) error {
 	}
 
 	document := documentHistory[len(documentHistory)-1]
-	return c.JSON(BodyStruct{Document: document})
+	return c.JSON(GetResponse{Document: document})
 }
 
 func setHandler(c *fiber.Ctx) error {
@@ -47,17 +55,30 @@ func setHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	documentHistory, err := getDocumentHistoryFromDb(collection, key)
-	if err != nil {
-		c.Status(404)
-		return c.JSON(ErrorMessage{Error: err.Error()})
-	}
+	documentHistory, _ := getDocumentHistoryFromDb(collection, key)
+	documentHistory = append(documentHistory, bodyStruct.Document)
 
-	documentToInsert, err := json.Marshal(bodyStruct.Document)
+	documentToInsert, err := json.Marshal(documentHistory)
 	handleError(err)
 
 	encryptedDocument := encryptData(documentToInsert)
 	writeDocumentFile(collection, key, encryptedDocument)
 
 	return c.JSON(bodyStruct)
+}
+
+func auditHandler(c *fiber.Ctx) error {
+	collection, key, err := validateCollectionAndKey(c)
+	if err != nil {
+		c.Status(400)
+		return c.JSON(ErrorMessage{Error: err.Error()})
+	}
+
+	documentHistory, err := getDocumentHistoryFromDb(collection, key)
+	if err != nil {
+		c.Status(404)
+		return c.JSON(ErrorMessage{Error: err.Error()})
+	}
+
+	return c.JSON(AuditResponse{DocumentHistory: documentHistory})
 }

@@ -12,7 +12,7 @@ func getDocumentHistoryFromDb(collection string, key string) ([]map[string]any, 
 
 	encryptedDocument, err := os.ReadFile(documentFileName)
 	if err != nil {
-		return []map[string]any{}, fmt.Errorf("xxx")
+		return []map[string]any{}, fmt.Errorf("read-error: could not find key %s on collection %s", key, collection)
 	}
 
 	decryptedDocument := decryptData(encryptedDocument)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
@@ -14,6 +15,11 @@ func handleError(e error) {
 }
 
 func main() {
+	_, err := os.Stat("data")
+	if os.IsNotExist(err) {
+		os.Mkdir("data", 0777)
+	}
+
 	app := fiber.New(fiber.Config{
 		JSONEncoder: json.Marshal,
 		JSONDecoder: json.Unmarshal,
@@ -25,6 +31,7 @@ func main() {
 
 	app.Get("/get/:collection/:key", getHandler)
 	app.Post("/set/:collection/:key", setHandler)
+	app.Get("/audit/:collection/:key", auditHandler)
 
 	log.Fatal(app.Listen(":6644"))
 }
