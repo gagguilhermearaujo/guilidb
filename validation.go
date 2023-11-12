@@ -11,11 +11,11 @@ var (
 	hasInvalidKey, _ = regexp.Compile(`[^A-Za-z0-9.\-_]+`)
 )
 
-func validateRequest(responses Responses, document DocumentRequest) (bool, Responses) {
+func validateRequest(responses Responses, document Request) (bool, Responses) {
 	shouldSkip := false
 	err := validateCollectionAndKey(document.Collection, document.Key)
 	if err != nil {
-		response := DocumentResponse{
+		response := Response{
 			Collection: document.Collection,
 			Key:        document.Key,
 			StatusCode: fiber.ErrBadRequest.Code,

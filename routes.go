@@ -25,16 +25,16 @@ func getHandler(c *fiber.Ctx) error {
 		}
 
 		documentHistory, err := getDocumentHistoryFromDb(document.Collection, document.Key)
-		var response DocumentResponse
+		var response Response
 		if err != nil {
-			response = DocumentResponse{
+			response = Response{
 				Collection: document.Collection,
 				Key:        document.Key,
 				StatusCode: fiber.StatusNotFound,
 				Message:    err.Error(),
 			}
 		} else {
-			response = DocumentResponse{
+			response = Response{
 				Collection: document.Collection,
 				Key:        document.Key,
 				StatusCode: fiber.StatusOK,
@@ -76,7 +76,7 @@ func setHandler(c *fiber.Ctx) error {
 
 		encryptedDocument := encryptData(documentToInsert)
 		writeDocumentFile(document.Collection, document.Key, encryptedDocument)
-		response := DocumentResponse{
+		response := Response{
 			Collection: document.Collection,
 			Key:        document.Key,
 			StatusCode: fiber.StatusCreated,
@@ -106,16 +106,16 @@ func auditHandler(c *fiber.Ctx) error {
 		}
 
 		documentHistory, err := getDocumentHistoryFromDb(document.Collection, document.Key)
-		var response DocumentResponse
+		var response Response
 		if err != nil {
-			response = DocumentResponse{
+			response = Response{
 				Collection: document.Collection,
 				Key:        document.Key,
 				StatusCode: fiber.StatusNotFound,
 				Message:    err.Error(),
 			}
 		} else {
-			response = DocumentResponse{
+			response = Response{
 				Collection: document.Collection,
 				Key:        document.Key,
 				StatusCode: fiber.StatusOK,

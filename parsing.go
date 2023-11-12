@@ -7,8 +7,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func parseDocumentsFromBody(c *fiber.Ctx) (*DocumentRequests, error) {
-	documents := new(DocumentRequests)
+func parseDocumentsFromBody(c *fiber.Ctx) (*Requests, error) {
+	documents := new(Requests)
 	err := c.BodyParser(documents)
 	if err != nil {
 		return nil, fmt.Errorf("body is not a valid JSON, XML or Form. It should contain a document/object/dict/hashmap at 'documents' key")
