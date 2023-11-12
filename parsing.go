@@ -7,13 +7,13 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func parseDocumentFromBody(c *fiber.Ctx) (*BodyStruct, error) {
-	document := new(BodyStruct)
-	err := c.BodyParser(document)
+func parseDocumentsFromBody(c *fiber.Ctx) (*DocumentRequests, error) {
+	documents := new(DocumentRequests)
+	err := c.BodyParser(documents)
 	if err != nil {
-		return nil, fmt.Errorf("body is not a valid JSON, XML or Form. It should contain a document/object/dict/hashmap at 'document' key")
+		return nil, fmt.Errorf("body is not a valid JSON, XML or Form. It should contain a document/object/dict/hashmap at 'documents' key")
 	}
-	return document, nil
+	return documents, nil
 }
 
 func parseDocumentFileIntoDocumentHistory(documentFile []byte) []map[string]interface{} {

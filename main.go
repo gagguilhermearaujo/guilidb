@@ -29,9 +29,9 @@ func main() {
 		return c.SendString("Use /get/{key} for getting the list of documents")
 	})
 
-	app.Get("/get/:collection/:key", getHandler)
-	app.Post("/set/:collection/:key", setHandler)
-	app.Get("/audit/:collection/:key", auditHandler)
+	app.Post("/get", getHandler)
+	app.Post("/set", setHandler)
+	app.Post("/audit", auditHandler)
 
 	log.Fatal(app.Listen(":6644"))
 }

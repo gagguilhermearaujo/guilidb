@@ -1,52 +1,14 @@
 package main
 
 import (
+	"time"
+
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 )
 
-type ErrorMessage struct {
-	Error   string         `json:"error"`
-	Example map[string]any `json:"example,omitempty"`
-}
-
-type BodyStruct struct {
-	Document map[string]any `json:"document" xml:"document" form:"document"`
-}
-
-type GetResponse struct {
-	Document map[string]any `json:"document" xml:"document" form:"document"`
-}
-
-type AuditResponse struct {
-	DocumentHistory []map[string]any `json:"documentHistory" xml:"documentHistory" form:"documentHistory"`
-}
-
 func getHandler(c *fiber.Ctx) error {
-	collection, key, err := validateCollectionAndKey(c)
-	if err != nil {
-		c.Status(400)
-		return c.JSON(ErrorMessage{Error: err.Error()})
-	}
-
-	documentHistory, err := getDocumentHistoryFromDb(collection, key)
-	if err != nil {
-		c.Status(404)
-		return c.JSON(ErrorMessage{Error: err.Error()})
-	}
-
-	document := documentHistory[len(documentHistory)-1]
-	return c.JSON(GetResponse{Document: document})
-}
-
-func setHandler(c *fiber.Ctx) error {
-	collection, key, err := validateCollectionAndKey(c)
-	if err != nil {
-		c.Status(400)
-		return c.JSON(ErrorMessage{Error: err.Error()})
-	}
-
-	bodyStruct, err := parseDocumentFromBody(c)
+	bodyStruct, err := parseDocumentsFromBody(c)
 	if err != nil {
 		c.Status(422)
 		return c.JSON(ErrorMessage{
@@ -55,30 +17,115 @@ func setHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	documentHistory, _ := getDocumentHistoryFromDb(collection, key)
-	documentHistory = append(documentHistory, bodyStruct.Document)
+	shouldSkip, responses := false, Responses{}
+	for _, document := range bodyStruct.Documents {
+		shouldSkip, responses = validateRequest(responses, document)
+		if shouldSkip {
+			continue
+		}
 
-	documentToInsert, err := json.Marshal(documentHistory)
-	handleError(err)
+		documentHistory, err := getDocumentHistoryFromDb(document.Collection, document.Key)
+		var response DocumentResponse
+		if err != nil {
+			response = DocumentResponse{
+				Collection: document.Collection,
+				Key:        document.Key,
+				StatusCode: fiber.StatusNotFound,
+				Message:    err.Error(),
+			}
+		} else {
+			response = DocumentResponse{
+				Collection: document.Collection,
+				Key:        document.Key,
+				StatusCode: fiber.StatusOK,
+				Message:    "Get command successful",
+				Data:       documentHistory[len(documentHistory)-1],
+			}
+		}
 
-	encryptedDocument := encryptData(documentToInsert)
-	writeDocumentFile(collection, key, encryptedDocument)
+		responses.Documents = append(responses.Documents, response)
 
-	return c.JSON(bodyStruct)
+	}
+	return c.JSON(responses)
+}
+
+func setHandler(c *fiber.Ctx) error {
+	bodyStruct, err := parseDocumentsFromBody(c)
+	if err != nil {
+		c.Status(422)
+		return c.JSON(ErrorMessage{
+			Error:   err.Error(),
+			Example: map[string]any{"document": map[string]any{"firstName": "John", "lastName": "Doe"}},
+		})
+	}
+
+	shouldSkip, responses := false, Responses{}
+	for _, document := range bodyStruct.Documents {
+		shouldSkip, responses = validateRequest(responses, document)
+		if shouldSkip {
+			continue
+		}
+
+		document.Data["#guilidb.setBy"] = "xxx"
+		document.Data["#guilidb.setAt"] = time.Now().UTC()
+		documentHistory, _ := getDocumentHistoryFromDb(document.Collection, document.Key)
+		documentHistory = append(documentHistory, document.Data)
+
+		documentToInsert, err := json.Marshal(documentHistory)
+		handleError(err)
+
+		encryptedDocument := encryptData(documentToInsert)
+		writeDocumentFile(document.Collection, document.Key, encryptedDocument)
+		response := DocumentResponse{
+			Collection: document.Collection,
+			Key:        document.Key,
+			StatusCode: fiber.StatusCreated,
+			Message:    "Set command successful",
+		}
+		responses.Documents = append(responses.Documents, response)
+	}
+
+	return c.JSON(responses)
 }
 
 func auditHandler(c *fiber.Ctx) error {
-	collection, key, err := validateCollectionAndKey(c)
+	bodyStruct, err := parseDocumentsFromBody(c)
 	if err != nil {
-		c.Status(400)
-		return c.JSON(ErrorMessage{Error: err.Error()})
+		c.Status(422)
+		return c.JSON(ErrorMessage{
+			Error:   err.Error(),
+			Example: map[string]any{"document": map[string]any{"firstName": "John", "lastName": "Doe"}},
+		})
 	}
 
-	documentHistory, err := getDocumentHistoryFromDb(collection, key)
-	if err != nil {
-		c.Status(404)
-		return c.JSON(ErrorMessage{Error: err.Error()})
-	}
+	shouldSkip, responses := false, Responses{}
+	for _, document := range bodyStruct.Documents {
+		shouldSkip, responses = validateRequest(responses, document)
+		if shouldSkip {
+			continue
+		}
 
-	return c.JSON(AuditResponse{DocumentHistory: documentHistory})
+		documentHistory, err := getDocumentHistoryFromDb(document.Collection, document.Key)
+		var response DocumentResponse
+		if err != nil {
+			response = DocumentResponse{
+				Collection: document.Collection,
+				Key:        document.Key,
+				StatusCode: fiber.StatusNotFound,
+				Message:    err.Error(),
+			}
+		} else {
+			response = DocumentResponse{
+				Collection: document.Collection,
+				Key:        document.Key,
+				StatusCode: fiber.StatusOK,
+				Message:    "Audit command successful",
+				Audit:      documentHistory,
+			}
+		}
+
+		responses.Documents = append(responses.Documents, response)
+
+	}
+	return c.JSON(responses)
 }
