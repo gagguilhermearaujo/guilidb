@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -17,6 +16,25 @@ func handleError(e error) {
 }
 
 func main() {
+	setupDirectoryAndConfigs()
+
+	app := fiber.New(fiber.Config{
+		JSONEncoder: json.Marshal,
+		JSONDecoder: json.Unmarshal,
+	})
+
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.SendString("Use /get/{key} for getting the list of documents")
+	})
+
+	app.Post("/get", getHandler)
+	app.Post("/set", setHandler)
+	app.Post("/audit", auditHandler)
+
+	log.Fatal(app.Listen(":6644"))
+}
+
+func setupDirectoryAndConfigs() {
 	_, err := os.Stat(dataDir)
 	if os.IsNotExist(err) {
 		os.Mkdir(dataDir, 0700)
@@ -33,20 +51,4 @@ func main() {
 		dbConfigsStruct, _ := json.Marshal(dbConfigs[len(dbConfigs)-1])
 		json.Unmarshal(dbConfigsStruct, &dbConfig)
 	}
-	fmt.Println(dbConfig.NamespaceUUID.String())
-
-	app := fiber.New(fiber.Config{
-		JSONEncoder: json.Marshal,
-		JSONDecoder: json.Unmarshal,
-	})
-
-	app.Get("/", func(c *fiber.Ctx) error {
-		return c.SendString("Use /get/{key} for getting the list of documents")
-	})
-
-	app.Post("/get", getHandler)
-	app.Post("/set", setHandler)
-	app.Post("/audit", auditHandler)
-
-	log.Fatal(app.Listen(":6644"))
 }
