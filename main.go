@@ -17,7 +17,7 @@ func handleError(e error) {
 func main() {
 	_, err := os.Stat("data")
 	if os.IsNotExist(err) {
-		os.Mkdir("data", 0777)
+		os.Mkdir("data", 0700)
 	}
 
 	app := fiber.New(fiber.Config{

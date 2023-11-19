@@ -26,10 +26,10 @@ func writeDocumentFile(collection string, key string, documentToInsert []byte) {
 
 	_, err := os.Stat(fmt.Sprintf("data/%s", hashedCollection))
 	if os.IsNotExist(err) {
-		os.Mkdir(fmt.Sprintf("data/%s", hashedCollection), 0777)
+		os.Mkdir(fmt.Sprintf("data/%s", hashedCollection), 0700)
 	}
 
-	err = os.WriteFile(documentFileName, documentToInsert, 0777)
+	err = os.WriteFile(documentFileName, documentToInsert, 0600)
 	handleError(err)
 }
 
