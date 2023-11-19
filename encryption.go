@@ -2,17 +2,10 @@ package main
 
 import (
 	"crypto/rand"
-
-	"golang.org/x/crypto/chacha20poly1305"
-)
-
-var (
-	key     = make([]byte, chacha20poly1305.KeySize)
-	aead, _ = chacha20poly1305.NewX(key)
 )
 
 func encryptData(dataToEncrypt []byte) []byte {
-	_, err := rand.Read(key)
+	_, err := rand.Read(encryptionKey)
 	if err != nil {
 		panic(err)
 	}

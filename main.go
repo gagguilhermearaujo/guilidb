@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 func handleError(e error) {
@@ -15,10 +17,23 @@ func handleError(e error) {
 }
 
 func main() {
-	_, err := os.Stat("data")
+	_, err := os.Stat(dataDir)
 	if os.IsNotExist(err) {
-		os.Mkdir("data", 0700)
+		os.Mkdir(dataDir, 0700)
 	}
+
+	dbConfigs, err := getDocumentHistoryFromDb(configCollection, configKey)
+	if err != nil {
+		newDbConfig := []DbConfig{{NamespaceUUID: uuid.New()}}
+		newDbConfigBytes, _ := json.Marshal(newDbConfig)
+		dbConfigToInsert := encryptData(newDbConfigBytes)
+		writeDocumentFile(configCollection, configKey, dbConfigToInsert)
+		dbConfig = newDbConfig[0]
+	} else {
+		dbConfigsStruct, _ := json.Marshal(dbConfigs[len(dbConfigs)-1])
+		json.Unmarshal(dbConfigsStruct, &dbConfig)
+	}
+	fmt.Println(dbConfig.NamespaceUUID.String())
 
 	app := fiber.New(fiber.Config{
 		JSONEncoder: json.Marshal,
