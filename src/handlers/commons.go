@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"fmt"
@@ -10,6 +10,19 @@ import (
 var (
 	hasInvalidKey, _ = regexp.Compile(`[^A-Za-z0-9.\-_]+`)
 )
+
+func parseBody(c *fiber.Ctx) (Requests, bool, error) {
+	var documents Requests
+	err := c.BodyParser(&documents)
+	if err != nil {
+		c.Status(422)
+		return Requests{}, true, c.JSON(ErrorMessage{
+			Error:   err.Error(),
+			Example: map[string]any{"document": map[string]any{"firstName": "John", "lastName": "Doe"}},
+		})
+	}
+	return documents, false, nil
+}
 
 func validateRequest(responses Responses, document Request) (bool, Responses) {
 	shouldSkip := false
@@ -24,6 +37,7 @@ func validateRequest(responses Responses, document Request) (bool, Responses) {
 		responses.Documents = append(responses.Documents, response)
 		shouldSkip = true
 	}
+
 	return shouldSkip, responses
 }
 
