@@ -10,15 +10,15 @@ import (
 )
 
 func SetHandler(c *fiber.Ctx) error {
-	documents, shouldReturnJsonErrorMessage, jsonErrorMessage := parseBody(c)
-	if shouldReturnJsonErrorMessage {
+	documents, errorOnParsing, jsonErrorMessage := parseBody(c)
+	if errorOnParsing {
 		return jsonErrorMessage
 	}
 
-	shouldSkipRequest, responses := false, Responses{}
+	validRequest, responses := false, Responses{}
 	for _, document := range documents.Documents {
-		shouldSkipRequest, responses = validateRequest(responses, document)
-		if shouldSkipRequest {
+		validRequest, responses = validateRequest(responses, document)
+		if !validRequest {
 			continue
 		}
 

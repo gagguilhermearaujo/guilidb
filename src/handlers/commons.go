@@ -25,7 +25,7 @@ func parseBody(c *fiber.Ctx) (Requests, bool, error) {
 }
 
 func validateRequest(responses Responses, document Request) (bool, Responses) {
-	shouldSkip := false
+	validRequest := true
 	err := validateCollectionAndKey(document.Collection, document.Key)
 	if err != nil {
 		response := Response{
@@ -35,10 +35,10 @@ func validateRequest(responses Responses, document Request) (bool, Responses) {
 			Message:    err.Error(),
 		}
 		responses.Documents = append(responses.Documents, response)
-		shouldSkip = true
+		validRequest = false
 	}
 
-	return shouldSkip, responses
+	return validRequest, responses
 }
 
 func validateCollectionAndKey(collection string, key string) error {
