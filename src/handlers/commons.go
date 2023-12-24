@@ -11,17 +11,18 @@ var (
 	hasInvalidKey, _ = regexp.Compile(`[^A-Za-z0-9.\-_]+`)
 )
 
-func parseBody(c *fiber.Ctx) (Requests, bool, error) {
-	var documents Requests
+func parseBody(c *fiber.Ctx) (documents Requests, errorOnParsing bool, jsonErrorMessage error) {
 	err := c.BodyParser(&documents)
 	if err != nil {
 		c.Status(422)
-		return Requests{}, true, c.JSON(ErrorMessage{
+		errorOnParsing = true
+		jsonErrorMessage = c.JSON(ErrorMessage{
 			Error:   err.Error(),
 			Example: map[string]any{"document": map[string]any{"firstName": "John", "lastName": "Doe"}},
 		})
+		return documents, errorOnParsing, jsonErrorMessage
 	}
-	return documents, false, nil
+	return documents, errorOnParsing, jsonErrorMessage
 }
 
 func validateRequest(responses Responses, document Request) (bool, Responses) {
